@@ -1,7 +1,7 @@
 ---
-title: "Lab 05 - La Quinta is Spanish for next to Denny's, Pt. 2"
-author: "Insert your name here"
-date: "Insert date here"
+title: "Lab 05 - Wrangling spatial data"
+author: "Tiffani J. Hill"
+date: "February 13, 2026"
 output: github_document
 ---
 
@@ -10,40 +10,193 @@ output: github_document
 ```{r load-packages, message = FALSE}
 library(tidyverse) 
 library(dsbox) 
+library(readr)
+library(ggridges)
 ```
 
 ```{r load-data, message = FALSE}
 states <- read_csv("data/states.csv")
+source("Haversine.R")
 ```
 
 ### Exercise 1
+There are 3 Denny's restaurants and 2 La Quinta hotels in Alaska.
+```{r dennys-alaska}
+dn_ak <- dennys %>% 
+  filter(state == "AK")
+nrow(dn_ak)
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+lq_ak <- laquinta %>% 
+filter(state == "AK")
+nrow(lq_ak)
+```
 
 ### Exercise 2
-
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+There are 6 pairings.
+```{r dennys_laquinta-pairings}
+nrow(dn_ak)* nrow(lq_ak)
+```
 
 ### Exercise 3
+
+```{r dennys_laquinta-distances-join}
+dn_lq_ak <- full_join(dn_ak, lq_ak,
+  by = "state"
+)
+dn_lq_ak
+```
+
 
 ...
 
 ### Exercise 4
-
+There are 6 observations in this data frame. The variables are Address, City, State, Zip code, Longitude and Latitude. 
 ...
 
 ### Exercise 5
-
-...
+Mutate
 
 ### Exercise 6
 
-...
+```{r latitude-function}
 
-Add exercise headings as needed.
+dn_lq_ak <- dn_lq_ak %>% 
+  mutate(
+    distance = haversine(
+      longitude.x,
+      latitude.x,
+      longitude.y,
+      latitude.y
+    )
+  )
+
+```
+
+### Exercise 7
+
+```{r dennys-min-distance }
+dn_lq_ak <- dn_lq_ak %>% 
+  group_by(latitude.x, longitude.x) %>% 
+  mutate(
+    min_distance = min(distance, na.rm = TRUE)
+  ) %>% 
+  ungroup()
+
+```
+
+###Exercise 8
+
+```{r dennys-distribution}
+ggplot(dn_lq_ak, aes(x = min_distance,y=1)) +
+       geom_dotplot()
+summary(dn_lq_ak$min_distance)
+       
+```
+###Exercise 9
+I know I could have done a histogram here but that's boring so I would have added a company variable to the dataset to make this more clear instead of using colors. Honestly, I really wanted to play around with this type of graph.
+```{r nc-locations}
+dn_nc <- dennys %>% 
+  filter(state == "NC")
+
+
+lq_nc <- laquinta %>% 
+filter(state == "NC")
+
+dn_lq_nc <- full_join(dn_nc, lq_nc,
+  by = "state"
+)
+dn_lq_nc
+
+dn_lq_nc <- dn_lq_nc %>% 
+  mutate(
+    distance = haversine(
+      longitude.x,
+      latitude.x,
+      longitude.y,
+      latitude.y
+    )
+  )
+
+dn_lq_nc <- dn_lq_nc %>% 
+  group_by(latitude.x, longitude.x) %>% 
+  mutate(
+    min_distance = min(distance, na.rm = TRUE)
+  ) %>% 
+  ungroup()
+
+ggplot(dn_lq_nc, aes(x = min_distance, y = 1, color = city.x, city.y)) +
+       geom_dotplot()
+summary(dn_lq_nc$min_distance)
+```
+##Exercise 10
+```{r texas-locations}
+dn_tx <- dennys %>% 
+  filter(state == "TX")
+
+
+lq_tx <- laquinta %>% 
+filter(state == "TX")
+
+dn_lq_tx <- full_join(dn_tx, lq_tx,
+  by = "state"
+)
+dn_lq_tx
+
+dn_lq_tx <- dn_lq_tx %>% 
+  mutate(
+    distance = haversine(
+      longitude.x,
+      latitude.x,
+      longitude.y,
+      latitude.y
+    )
+  )
+
+dn_lq_tx <- dn_lq_tx %>% 
+  group_by(latitude.x, longitude.x) %>% 
+  mutate(
+    min_distance = min(distance, na.rm = TRUE)
+  ) %>% 
+  ungroup()
+
+ggplot(dn_lq_tx, aes(x = min_distance)) +
+       geom_histogram()
+summary(dn_lq_tx$min_distance)
+```
+
+###Exercise 11
+```{r michigan-locations}
+dn_mi <- dennys %>% 
+  filter(state == "MI")
+
+
+lq_mi <- laquinta %>% 
+filter(state == "MI")
+
+dn_lq_mi <- full_join(dn_mi, lq_mi,
+  by = "state"
+)
+dn_lq_mi
+
+dn_lq_mi <- dn_lq_mi %>% 
+  mutate(
+    distance = haversine(
+      longitude.x,
+      latitude.x,
+      longitude.y,
+      latitude.y
+    )
+  )
+
+dn_lq_mi <- dn_lq_mi %>% 
+  group_by(latitude.x, longitude.x) %>% 
+  mutate(
+    min_distance = min(distance, na.rm = TRUE)
+  ) %>% 
+  ungroup()
+
+ggplot(dn_lq_mi, aes(x = min_distance)) +
+       geom_histogram()
+summary(dn_lq_mi$min_distance)
+```
+In a few states, Mitch Hedberg's joke appears to hold some validity like Texas and Alaska. However, it is not the case for all states. Looking at the summary statistics and visualizations for four different states the minimum distances vary quite a bit. 
